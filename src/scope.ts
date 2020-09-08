@@ -1,6 +1,7 @@
 import { distance } from './utils';
-import { cellSize, cellCountX, cellCountY, maxValue } from './constants';
+import * as d3 from 'd3-scale-chromatic';
 import { Point, DrawOptions } from './types';
+import { cellSize, cellCountX, cellCountY, maxValue } from './constants';
 
 export class Scope {
     private points: number[][];
@@ -64,7 +65,7 @@ export class Scope {
 
                     const delta = i === x && j === y ? value : value * (1 - dst / radius);
 
-                    values[i][j] = Math.round(values[i][j] + delta);
+                    values[i][j] = values[i][j] + delta;
                 }
             }
         }
@@ -85,6 +86,8 @@ export class Scope {
                 } else if (fillType === 'grayscale') {
                     const level = Math.round(Math.min(values[i][j] / cutoff, 1) * 255);
                     ctx.fillStyle = `rgb(${level}, ${level}, ${level})`;
+                } else {
+                    ctx.fillStyle = d3[fillType](Math.min(values[i][j] / cutoff, 1));
                 }
 
                 ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
@@ -100,7 +103,7 @@ export class Scope {
             for (let i = 0; i < values.length; i++) {
                 for (let j = 0; j < values[i].length; j++) {
                     ctx.fillText(
-                        String(values[i][j]),
+                        String(Math.round(values[i][j])),
                         cellSize * i + cellSize / 2,
                         cellSize * j + cellSize / 2 + 1,
                     );
@@ -118,5 +121,21 @@ export class Scope {
             this.points.push(Array(cellCountY).fill(0));
             this.values.push(Array(cellCountY).fill(0));
         }
+    }
+
+    public getMaxValue(): number {
+        const { values } = this;
+
+        let max = 0;
+
+        for (let i = 0; i < cellCountX; i++) {
+            for (let j = 0; j < cellCountY; j++) {
+                if (values[i][j] > max) {
+                    max = values[i][j];
+                }
+            }
+        }
+
+        return max;
     }
 }

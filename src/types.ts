@@ -7,6 +7,10 @@ export interface Point {
 export interface DrawOptions {
     showNumbers: boolean;
     highlightDataPoints: boolean;
-    fillType: 'none' | 'grayscale' | 'colorscale';
+    fillType: FillType;
     cutoff: number;
 }
+
+export type FillType = 'none' | 'grayscale' | 'colorscale';
+
+export type RGB = [number, number, number];
