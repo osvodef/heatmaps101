@@ -1,7 +1,7 @@
 {
   "name": "heatmaps101",
   "version": "1.0.0",
-  "description": "Heatmap demonstration app",
+  "description": "Heatmap rendering demonstration app",
   "main": "src/index.js",
   "scripts": {
     "start": "webpack-dev-server",

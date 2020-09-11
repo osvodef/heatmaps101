@@ -6,12 +6,12 @@ import { cellSize, maxValue, cellCountX, cellCountY } from './constants';
 const drawOptions: DrawOptions = {
     showNumbers: true,
     highlightDataPoints: true,
-    fillType: 'none',
+    fillType: 'interpolateSpectral',
     cutoff: 100,
 };
 
 let heatmapType: HeatmapType = 'regular';
-let radius = 0;
+let radius = 8;
 
 const addButton = document.querySelector('.button.add') as HTMLDivElement;
 const clearButton = document.querySelector('.button.clear') as HTMLDivElement;
@@ -38,14 +38,7 @@ display.addEventListener('click', (e) => {
 });
 
 addButton.addEventListener('click', () => {
-    for (let i = 0; i < 10; i++) {
-        const x = Math.floor(Math.random() * cellCountX);
-        const y = Math.floor(Math.random() * cellCountY);
-        const value = Math.floor(Math.random() * maxValue);
-
-        scope.addPoint(value, x, y);
-    }
-
+    addTenPoints();
     recalc();
     redraw();
 });
@@ -92,8 +85,19 @@ typeSelect.addEventListener('input', () => {
     redraw();
 });
 
+addTenPoints();
 recalc();
 redraw();
+
+function addTenPoints() {
+    for (let i = 0; i < 10; i++) {
+        const x = Math.floor(Math.random() * cellCountX);
+        const y = Math.floor(Math.random() * cellCountY);
+        const value = Math.floor(Math.random() * maxValue);
+
+        scope.addPoint(value, x, y);
+    }
+}
 
 function recalc() {
     scope.calculateValues(radius, heatmapType);
