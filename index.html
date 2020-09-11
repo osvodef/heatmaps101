@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Heatmaps 101</title>
+        <meta charset="utf-8" />
+        <link rel="shortcut icon" href="favicon.png" />
+
+        <meta name="description" content="Heatmap rendering visualization app." />
+
+        <meta name="title" content="Heatmaps 101" />
+        <meta name="description" content="Heatmap rendering visualization app." />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://alex.gl/heatmaps101/" />
+        <meta property="og:title" content="Heatmaps 101" />
+        <meta property="og:description" content="Heatmap rendering visualization app." />
+        <meta property="og:image" content="https://alex.gl/heatmaps101/heatmaps101.png" />
+
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://alex.gl/heatmaps101/heatmaps101.png" />
+        <meta property="twitter:title" content="heatmaps101" />
+        <meta property="twitter:description" content="Heatmap rendering visualization app." />
+        <meta property="twitter:image" content="https://alex.gl/heatmaps101/heatmaps101.png" />
+    </head>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        html,
+        body {
+            display: flex;
+            margin: 0;
+            padding: 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        #display {
+            cursor: pointer;
+        }
+
+        #controls {
+            width: 300px;
+            padding: 5px 10px;
+        }
+
+        .control-group:not(:first-child) {
+            margin-top: 15px;
+        }
+
+        .control-group.buttons {
+            display: flex;
+        }
+
+        .slider,
+        .select {
+            width: 100%;
+        }
+
+        .slider,
+        .select,
+        .checkbox,
+        .radio {
+            cursor: pointer;
+        }
+
+        .button {
+            background-color: #000;
+            color: #fff;
+            width: 100%;
+            height: 30px;
+            margin-top: 5px;
+            padding: 5px;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+        }
+
+        .button:not(:first-child) {
+            margin-left: 5px;
+        }
+    </style>
+    <body>
+        <div id="display"></div>
+        <div id="controls">
+            <div class="control-group buttons">
+                <div class="button add">Add 10 points</div>
+                <div class="button clear">Clear</div>
+            </div>
+
+            <div class="control-group">
+                <div>Radius: <span id="radius-indicator">0</span>px</div>
+                <input
+                    class="slider"
+                    id="radius-slider"
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="any"
+                    value="8"
+                />
+            </div>
+
+            <div class="control-group">
+                <div>Cutoff value: <span id="cutoff-indicator">100</span></div>
+                <input
+                    class="slider"
+                    id="cutoff-slider"
+                    type="range"
+                    min="0"
+                    max="300"
+                    step="any"
+                    value="100"
+                />
+            </div>
+
+            <div class="control-group">
+                <div>
+                    <input class="checkbox numbers" type="checkbox" name="showNumbers" checked />
+                    <label for="showNumbers">Show numbers</label>
+                </div>
+                <div>
+                    <input class="checkbox points" type="checkbox" name="highlightPoints" checked />
+                    <label for="highlightPoints">Highlight data points</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div>Heatmap type:</div>
+                <select class="select type">
+                    <option value="regular">Regular</option>
+                    <option value="idw">IDW</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div>Color scheme:</div>
+                <select class="select color">
+                    <option value="none">none</option>
+                    <option value="grayscale">grayscale</option>
+
+                    <option selected value="interpolateSpectral">interpolateSpectral</option>
+                    <option value="interpolateMagma">interpolateMagma</option>
+                    <option value="interpolateBlues">interpolateBlues</option>
+                    <option value="interpolateBrBG">interpolateBrBG</option>
+                    <option value="interpolateBuGn">interpolateBuGn</option>
+                    <option value="interpolateBuPu">interpolateBuPu</option>
+                    <option value="interpolateCividis">interpolateCividis</option>
+                    <option value="interpolateCool">interpolateCool</option>
+                    <option value="interpolateCubehelixDefault">interpolateCubehelixDefault</option>
+                    <option value="interpolateGnBu">interpolateGnBu</option>
+                    <option value="interpolateGreens">interpolateGreens</option>
+                    <option value="interpolateGreys">interpolateGreys</option>
+                    <option value="interpolateInferno">interpolateInferno</option>
+                    <option value="interpolateOrRd">interpolateOrRd</option>
+                    <option value="interpolateOranges">interpolateOranges</option>
+                    <option value="interpolatePRGn">interpolatePRGn</option>
+                    <option value="interpolatePiYG">interpolatePiYG</option>
+                    <option value="interpolatePlasma">interpolatePlasma</option>
+                    <option value="interpolatePuBu">interpolatePuBu</option>
+                    <option value="interpolatePuBuGn">interpolatePuBuGn</option>
+                    <option value="interpolatePuOr">interpolatePuOr</option>
+                    <option value="interpolatePuRd">interpolatePuRd</option>
+                    <option value="interpolatePurples">interpolatePurples</option>
+                    <option value="interpolateRainbow">interpolateRainbow</option>
+                    <option value="interpolateRdBu">interpolateRdBu</option>
+                    <option value="interpolateRdGy">interpolateRdGy</option>
+                    <option value="interpolateRdPu">interpolateRdPu</option>
+                    <option value="interpolateRdYlBu">interpolateRdYlBu</option>
+                    <option value="interpolateRdYlGn">interpolateRdYlGn</option>
+                    <option value="interpolateReds">interpolateReds</option>
+                    <option value="interpolateSinebow">interpolateSinebow</option>
+                    <option value="interpolateTurbo">interpolateTurbo</option>
+                    <option value="interpolateViridis">interpolateViridis</option>
+                    <option value="interpolateWarm">interpolateWarm</option>
+                    <option value="interpolateYlGn">interpolateYlGn</option>
+                    <option value="interpolateYlGnBu">interpolateYlGnBu</option>
+                    <option value="interpolateYlOrBr">interpolateYlOrBr</option>
+                    <option value="interpolateYlOrRd">interpolateYlOrRd</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div id="ruler"></div>
+            </div>
+        </div>
+        <script src="bundle.js"></script>
+    </body>
+</html>
