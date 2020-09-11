@@ -1,6 +1,6 @@
-import { DrawOptions, RGB } from './types';
 import * as d3 from 'd3-scale-chromatic';
 import { d3ColorToRgb } from './utils';
+import { DrawOptions } from './types';
 
 export class Ruler {
     private ctx: CanvasRenderingContext2D;
@@ -9,12 +9,15 @@ export class Ruler {
     private height: number;
 
     constructor(container: HTMLElement) {
-        this.width = container.clientWidth;
-        this.height = 75;
+        this.width = container.clientWidth * window.devicePixelRatio;
+        this.height = 75 * window.devicePixelRatio;
 
         const canvas = document.createElement('canvas');
         canvas.width = this.width;
         canvas.height = this.height;
+
+        canvas.style.width = `${this.width / window.devicePixelRatio}px`;
+        canvas.style.height = `${this.height / window.devicePixelRatio}px`;
 
         this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
         this.ctx.imageSmoothingEnabled = false;
@@ -35,8 +38,13 @@ export class Ruler {
     private drawColors(drawOptions: DrawOptions, maxValue: number): void {
         const { cutoff, fillType } = drawOptions;
 
+        if (fillType === 'none') {
+            return;
+        }
+
         const width = this.width;
-        const height = this.height - 20;
+        const axisHeight = 20 * window.devicePixelRatio;
+        const height = this.height - axisHeight;
 
         const imageData = new ImageData(width, height);
         const pixels = imageData.data;
@@ -44,15 +52,12 @@ export class Ruler {
         for (let i = 0; i < width; i++) {
             const value = (i / width) * maxValue;
             const ratio = Math.min(value / cutoff, 1);
+            const level = Math.round(ratio * 255);
 
-            let color: RGB;
-
-            if (fillType === 'grayscale') {
-                const level = Math.round(ratio * 255);
-                color = [level, level, level];
-            } else {
-                color = d3ColorToRgb(d3[fillType](ratio));
-            }
+            const color =
+                fillType === 'grayscale'
+                    ? [level, level, level]
+                    : d3ColorToRgb(d3[fillType](ratio));
 
             for (let j = 0; j < height; j++) {
                 const baseIndex = (j * width + i) * 4;
@@ -64,57 +69,79 @@ export class Ruler {
             }
         }
 
-        this.ctx.putImageData(imageData, 0, 20);
+        this.ctx.putImageData(imageData, 0, axisHeight);
     }
 
     private drawAxis(drawOptions: DrawOptions, maxValue: number): void {
-        const { ctx } = this;
+        const { ctx, width, height } = this;
+        const dpr = window.devicePixelRatio;
+        const halfPx = 0.5 * dpr;
 
-        const width = this.width;
-        const left = 0.5;
-        const right = width - 0.5;
-        const barHeight = 20 + 0.5;
-        const tickHeightBig = 8;
-        const tickHeightSmall = 4;
-        const minTickDistance = 30;
+        const left = halfPx;
+        const right = width - halfPx;
+        const bottom = height - halfPx;
+        const axisHeight = 20 * dpr + halfPx;
+        const textHeight = 10 * dpr;
+        const tickHeightBig = 8 * dpr;
+        const tickHeightSmall = 4 * dpr;
+        const minTickDistance = 30 * dpr;
         const tickCount = width / minTickDistance;
         const tickStep = Math.ceil(maxValue / tickCount / 10) * 10;
         const tickStepPx = (tickStep / maxValue) * width;
 
-        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.strokeStyle = '#000000';
+        ctx.fillStyle = '#000000';
+        ctx.lineWidth = 1 * dpr;
 
-        ctx.moveTo(left, barHeight);
-        ctx.lineTo(right, barHeight);
+        ctx.moveTo(left, axisHeight);
+        ctx.lineTo(right, axisHeight);
 
-        ctx.moveTo(left, barHeight - tickHeightBig);
-        ctx.lineTo(left, barHeight);
+        ctx.moveTo(left, axisHeight - tickHeightBig);
+        ctx.lineTo(left, axisHeight);
 
-        ctx.moveTo(right, barHeight - tickHeightBig);
-        ctx.lineTo(right, barHeight);
+        ctx.moveTo(right, axisHeight - tickHeightBig);
+        ctx.lineTo(right, axisHeight);
 
         ctx.stroke();
 
-        ctx.font = '12px monospace';
+        ctx.font = `${12 * dpr}px monospace`;
 
         ctx.textAlign = 'left';
-        ctx.fillText('0', left, 10);
+        ctx.fillText('0', left, textHeight);
 
         ctx.textAlign = 'right';
-        ctx.fillText(String(Math.ceil(maxValue)), right, 10);
+        ctx.fillText(String(Math.ceil(maxValue)), right, textHeight);
 
         ctx.textAlign = 'center';
 
         let value = tickStep;
         let x = left + tickStepPx;
-        while (x < right - 35) {
-            ctx.moveTo(Math.round(x) + 0.5, barHeight - tickHeightSmall);
-            ctx.lineTo(Math.round(x) + 0.5, barHeight);
+        while (x < right - 35 * dpr) {
+            ctx.moveTo(Math.round(x) + halfPx, axisHeight - tickHeightSmall);
+            ctx.lineTo(Math.round(x) + halfPx, axisHeight);
             ctx.stroke();
 
-            ctx.fillText(String(Math.round(value)), x, 10);
+            ctx.fillText(String(Math.round(value)), x, textHeight);
 
             value += tickStep;
             x += tickStepPx;
         }
+
+        const cutoffPosition = Math.round((drawOptions.cutoff / maxValue) * width) + halfPx;
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff5c5c';
+        ctx.fillStyle = '#ff5c5c';
+
+        ctx.moveTo(cutoffPosition, axisHeight);
+        ctx.lineTo(cutoffPosition, bottom);
+        ctx.stroke();
+
+        ctx.moveTo(cutoffPosition, axisHeight);
+        ctx.lineTo(cutoffPosition - tickHeightBig / 2, axisHeight - tickHeightBig);
+        ctx.lineTo(cutoffPosition + tickHeightBig / 2, axisHeight - tickHeightBig);
+        ctx.lineTo(cutoffPosition, axisHeight);
+        ctx.stroke();
+        ctx.fill();
     }
 }

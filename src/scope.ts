@@ -1,30 +1,32 @@
 import { distance } from './utils';
 import * as d3 from 'd3-scale-chromatic';
-import { Point, DrawOptions } from './types';
-import { cellSize, cellCountX, cellCountY, maxValue } from './constants';
+import { Point, DrawOptions, HeatmapType } from './types';
+import { cellSize, cellCountX, cellCountY } from './constants';
 
 export class Scope {
     private points: number[][];
     private values: number[][];
 
-    private pointList: Point[];
-
+    private cellSize: number;
     private width: number;
     private height: number;
 
     private ctx: CanvasRenderingContext2D;
 
     constructor(container: HTMLElement) {
-        this.width = cellCountX * cellSize;
-        this.height = cellCountY * cellSize;
+        this.cellSize = cellSize * window.devicePixelRatio;
+        this.width = cellCountX * this.cellSize;
+        this.height = cellCountY * this.cellSize;
 
         const canvas = document.createElement('canvas');
         canvas.width = this.width;
         canvas.height = this.height;
 
+        canvas.style.width = `${this.width / window.devicePixelRatio}px`;
+        canvas.style.height = `${this.height / window.devicePixelRatio}px`;
+
         this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-        this.pointList = [];
         this.points = [];
         this.values = [];
 
@@ -37,42 +39,19 @@ export class Scope {
     }
 
     public addPoint(value: number, x: number, y: number): void {
-        this.pointList.push({ x, y, value });
         this.points[x][y] = value;
     }
 
-    public addRandomPoint(): void {
-        const x = Math.floor(Math.random() * cellCountX);
-        const y = Math.floor(Math.random() * cellCountY);
-        const value = Math.floor(Math.random() * maxValue);
-
-        this.addPoint(value, x, y);
-    }
-
-    public calculateValues(radius: number): void {
-        const { values, pointList } = this;
-
-        for (let i = 0; i < values.length; i++) {
-            for (let j = 0; j < values[i].length; j++) {
-                values[i][j] = 0;
-
-                for (const { x, y, value } of pointList) {
-                    const dst = distance(x, y, i, j);
-
-                    if (dst > radius) {
-                        continue;
-                    }
-
-                    const delta = i === x && j === y ? value : value * (1 - dst / radius);
-
-                    values[i][j] = values[i][j] + delta;
-                }
-            }
+    public calculateValues(radius: number, type: HeatmapType): void {
+        if (type === 'regular') {
+            this.calculateValuesRegular(radius);
+        } else {
+            this.calculateValuesIdw(radius);
         }
     }
 
     public draw(options: DrawOptions): void {
-        const { ctx, points, values } = this;
+        const { ctx, points, values, cellSize } = this;
         const { cutoff, highlightDataPoints, fillType, showNumbers } = options;
 
         ctx.imageSmoothingEnabled = false;
@@ -97,7 +76,7 @@ export class Scope {
         if (showNumbers) {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = '15px monospace';
+            ctx.font = `${15 * window.devicePixelRatio}px monospace`;
             ctx.fillStyle = '#fff';
 
             for (let i = 0; i < values.length; i++) {
@@ -113,7 +92,6 @@ export class Scope {
     }
 
     public clear(): void {
-        this.pointList = [];
         this.points = [];
         this.values = [];
 
@@ -137,5 +115,73 @@ export class Scope {
         }
 
         return max;
+    }
+
+    private calculateValuesRegular(radius: number): void {
+        const { values } = this;
+        const pointList = this.getPointList();
+
+        for (let i = 0; i < values.length; i++) {
+            for (let j = 0; j < values[i].length; j++) {
+                values[i][j] = 0;
+
+                for (const { x, y, value } of pointList) {
+                    const dst = distance(x, y, i, j);
+
+                    if (dst > radius) {
+                        continue;
+                    }
+
+                    const delta = i === x && j === y ? value : value * (1 - dst / radius);
+
+                    values[i][j] = values[i][j] + delta;
+                }
+            }
+        }
+    }
+
+    private calculateValuesIdw(radius: number): void {
+        const { points, values } = this;
+        const pointList = this.getPointList();
+
+        for (let i = 0; i < values.length; i++) {
+            for (let j = 0; j < values[i].length; j++) {
+                if (points[i][j] !== 0) {
+                    values[i][j] = points[i][j];
+                    continue;
+                }
+
+                let numerator = 0;
+                let denominator = 0;
+
+                for (const { x, y, value } of pointList) {
+                    const dst = distance(x, y, i, j);
+
+                    if (dst > radius) {
+                        continue;
+                    }
+
+                    numerator += value / (dst * dst);
+                    denominator += 1 / (dst * dst);
+                }
+
+                values[i][j] = denominator !== 0 ? numerator / denominator : 0;
+            }
+        }
+    }
+
+    private getPointList(): Point[] {
+        const { points } = this;
+        const pointList: Point[] = [];
+
+        for (let i = 0; i < points.length; i++) {
+            for (let j = 0; j < points[i].length; j++) {
+                if (points[i][j] !== 0) {
+                    pointList.push({ x: i, y: j, value: points[i][j] });
+                }
+            }
+        }
+
+        return pointList;
     }
 }

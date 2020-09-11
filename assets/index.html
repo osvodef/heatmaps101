@@ -3,6 +3,7 @@
     <head>
         <title>Heatmaps 101</title>
         <meta charset="utf-8" />
+        <link rel="shortcut icon" href="favicon.png" />
     </head>
     <style>
         * {
@@ -17,6 +18,10 @@
             padding: 0;
             font-family: monospace;
             font-size: 14px;
+        }
+
+        #display {
+            cursor: pointer;
         }
 
         #controls {
@@ -75,7 +80,7 @@
                     id="radius-slider"
                     type="range"
                     min="0"
-                    max="10"
+                    max="30"
                     step="any"
                     value="0"
                 />
@@ -103,6 +108,14 @@
                     <input class="checkbox points" type="checkbox" name="highlightPoints" checked />
                     <label for="highlightPoints">Highlight data points</label>
                 </div>
+            </div>
+
+            <div class="control-group">
+                <div>Heatmap type:</div>
+                <select class="select type">
+                    <option value="regular">Regular</option>
+                    <option value="idw">IDW</option>
+                </select>
             </div>
 
             <div class="control-group">

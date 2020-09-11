@@ -1,6 +1,7 @@
 import { Scope } from './scope';
 import { Ruler } from './ruler';
-import { DrawOptions, FillType } from './types';
+import { DrawOptions, FillType, HeatmapType } from './types';
+import { cellSize, maxValue, cellCountX, cellCountY } from './constants';
 
 const drawOptions: DrawOptions = {
     showNumbers: true,
@@ -9,6 +10,7 @@ const drawOptions: DrawOptions = {
     cutoff: 100,
 };
 
+let heatmapType: HeatmapType = 'regular';
 let radius = 0;
 
 const addButton = document.querySelector('.button.add') as HTMLDivElement;
@@ -20,13 +22,28 @@ const cutoffIndicator = document.querySelector('#cutoff-indicator') as HTMLSpanE
 const numbersCheckbox = document.querySelector('.checkbox.numbers') as HTMLInputElement;
 const pointsCheckbox = document.querySelector('.checkbox.points') as HTMLInputElement;
 const colorSelect = document.querySelector('.select.color') as HTMLSelectElement;
+const typeSelect = document.querySelector('.select.type') as HTMLSelectElement;
+const display = document.querySelector('#display') as HTMLElement;
 
-const scope = new Scope(document.querySelector('#display') as HTMLElement);
+const scope = new Scope(display);
 const ruler = new Ruler(document.querySelector('#ruler') as HTMLElement);
+
+display.addEventListener('click', (e) => {
+    const x = Math.floor(e.offsetX / cellSize);
+    const y = Math.floor(e.offsetY / cellSize);
+    scope.addPoint(Math.floor(Math.random() * maxValue), x, y);
+
+    recalc();
+    redraw();
+});
 
 addButton.addEventListener('click', () => {
     for (let i = 0; i < 10; i++) {
-        scope.addRandomPoint();
+        const x = Math.floor(Math.random() * cellCountX);
+        const y = Math.floor(Math.random() * cellCountY);
+        const value = Math.floor(Math.random() * maxValue);
+
+        scope.addPoint(value, x, y);
     }
 
     recalc();
@@ -69,11 +86,17 @@ colorSelect.addEventListener('input', () => {
     redraw();
 });
 
+typeSelect.addEventListener('input', () => {
+    heatmapType = typeSelect.value as HeatmapType;
+    recalc();
+    redraw();
+});
+
 recalc();
 redraw();
 
 function recalc() {
-    scope.calculateValues(radius);
+    scope.calculateValues(radius, heatmapType);
 }
 
 function redraw() {
